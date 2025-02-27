@@ -5,6 +5,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 import {
   Dialog,
@@ -29,10 +30,10 @@ import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   name: z.string().min(1, {
-    message: "Server name is required."
+    message: "Classroom name is required."
   }),
   imageUrl: z.string().min(1, {
-    message: "Server image is required."
+    message: "Classroom image is required."
   })
 });
 
@@ -57,13 +58,23 @@ export const InitialModal = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.post("/api/servers", values);
+      const loadingToast = toast.loading("Creating classroom...");
+      
+      console.log("Submitting form with values:", values);
+      
+      const response = await axios.post("/api/servers", values);
+      console.log("Server response:", response.data);
 
       form.reset();
       router.refresh();
+      
+      toast.dismiss(loadingToast);
+      toast.success("Classroom created successfully!");
+      
       window.location.reload();
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.error("Error creating classroom:", error);
+      toast.error(error?.response?.data || "Failed to create classroom");
     }
   }
 
@@ -75,13 +86,13 @@ export const InitialModal = () => {
     <Dialog open>
       <DialogContent className="
           bg-white
-            dark:bg-black 
-            dark:text-white 
-            text-black 
-            p-0 
-            overflow-hidden 
-            border-none
-          ">
+          dark:bg-black 
+          dark:text-white 
+          text-black 
+          p-0 
+          overflow-hidden 
+          border-none
+        ">
         <DialogHeader className="pt-8 px-6">
           <DialogTitle className="text-2xl text-center font-bold">
             Create Classroom
@@ -106,6 +117,7 @@ export const InitialModal = () => {
                           onChange={field.onChange}
                         />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -146,7 +158,7 @@ export const InitialModal = () => {
             </div>
             <DialogFooter className="bg-gray-100 dark:bg-black px-6 py-4">
               <Button variant="primary" disabled={isLoading}>
-                Create
+                {isLoading ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>
           </form>

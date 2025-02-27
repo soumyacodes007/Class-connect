@@ -2,6 +2,7 @@
 
 import { FileIcon, X } from "lucide-react";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 import { UploadDropzone } from "@/lib/uploadthing";
 
@@ -28,6 +29,10 @@ export const FileUpload = ({
           src={value}
           alt="Upload"
           className="rounded-full"
+          onError={() => {
+            toast.error("Failed to load image");
+            onChange("");
+          }}
         />
         <button
           onClick={() => onChange("")}
@@ -64,14 +69,46 @@ export const FileUpload = ({
   }
 
   return (
-    <UploadDropzone
-      endpoint={endpoint}
-      onClientUploadComplete={(res) => {
-        onChange(res?.[0].url);
-      }}
-      onUploadError={(error: Error) => {
-        console.log(error);
-      }}
-    />
+    <div className="flex flex-col items-center justify-center">
+      <UploadDropzone
+        endpoint={endpoint}
+        appearance={{
+          button: "bg-blue-500 p-2",
+          uploadIcon: "text-blue-500",
+          label: "Drop your image here or click to browse"
+        }}
+        content={{
+          label: "Drop your image here or click to browse",
+          allowedContent: "Images up to 4MB"
+        }}
+        onClientUploadComplete={(res) => {
+          if (!res?.[0]?.url) {
+            toast.error("Failed to upload file");
+            return;
+          }
+          onChange(res[0].url);
+          toast.success("File uploaded successfully!");
+          if ((window as any).__uploadLoadingToast) {
+            toast.dismiss((window as any).__uploadLoadingToast);
+          }
+        }}
+        onUploadError={(error: Error) => {
+          console.error("Upload error:", error);
+          toast.error(error.message || "Failed to upload file");
+          if ((window as any).__uploadLoadingToast) {
+            toast.dismiss((window as any).__uploadLoadingToast);
+          }
+        }}
+        onUploadBegin={() => {
+          const loadingToast = toast.loading("Uploading file...");
+          (window as any).__uploadLoadingToast = loadingToast;
+        }}
+      />
+      {!value && (
+        <p className="text-sm text-red-500 mt-2">
+          Please upload a classroom image
+        </p>
+      )}
+    </div>
   )
 }

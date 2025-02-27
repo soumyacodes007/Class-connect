@@ -3,15 +3,23 @@ import { NextResponse } from "next/server";
 import { MemberRole } from "@prisma/client";
 
 import { currentProfile } from "@/lib/current-profile";
+import { initialProfile } from "@/lib/initial-profile";
 import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
     const { name, imageUrl } = await req.json();
-    const profile = await currentProfile();
+    
+    // First ensure we have a profile
+    let profile = await currentProfile();
+    
+    if (!profile) {
+      // Try to create initial profile
+      profile = await initialProfile();
+    }
 
     if (!profile) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse("Unauthorized - Could not create profile", { status: 401 });
     }
 
     const server = await db.server.create({
@@ -36,6 +44,6 @@ export async function POST(req: Request) {
     return NextResponse.json(server);
   } catch (error) {
     console.log("[SERVERS_POST]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return new NextResponse(error instanceof Error ? error.message : "Internal Error", { status: 500 });
   }
 }
