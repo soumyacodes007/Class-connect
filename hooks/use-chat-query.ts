@@ -19,16 +19,27 @@ export const useChatQuery = ({
   const { isConnected } = useSocket();
 
   const fetchMessages = async ({ pageParam = undefined }) => {
-    const url = qs.stringifyUrl({
-      url: apiUrl,
-      query: {
-        cursor: pageParam,
-        [paramKey]: paramValue,
-      }
-    }, { skipNull: true });
+    try {
+      const url = qs.stringifyUrl({
+        url: apiUrl,
+        query: {
+          cursor: pageParam,
+          [paramKey]: paramValue,
+        }
+      }, { skipNull: true });
 
-    const res = await fetch(url);
-    return res.json();
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data || !data.items) {
+        return { items: [], nextCursor: null };
+      }
+
+      return data;
+    } catch (error) {
+      console.error("[CHAT_QUERY_ERROR]", error);
+      return { items: [], nextCursor: null };
+    }
   };
 
   const {
@@ -42,6 +53,7 @@ export const useChatQuery = ({
     queryFn: fetchMessages,
     getNextPageParam: (lastPage) => lastPage?.nextCursor,
     refetchInterval: isConnected ? false : 1000,
+    initialPageParam: undefined,
   });
 
   return {
@@ -51,4 +63,4 @@ export const useChatQuery = ({
     isFetchingNextPage,
     status,
   };
-}
+};

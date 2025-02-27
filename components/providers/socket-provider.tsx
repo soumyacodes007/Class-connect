@@ -34,20 +34,39 @@ export const SocketProvider = ({
     const socketInstance = new (ClientIO as any)(process.env.NEXT_PUBLIC_SITE_URL!, {
       path: "/api/socket/io",
       addTrailingSlash: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 60000,
+      transports: ['polling', 'websocket']
     });
 
     socketInstance.on("connect", () => {
+      console.log("Socket connected!");
       setIsConnected(true);
     });
 
     socketInstance.on("disconnect", () => {
+      console.log("Socket disconnected!");
+      setIsConnected(false);
+    });
+
+    socketInstance.on("connect_error", (err: any) => {
+      console.log("Socket connection error:", err.message);
+      setIsConnected(false);
+    });
+
+    socketInstance.on("error", (err: any) => {
+      console.log("Socket error:", err.message);
       setIsConnected(false);
     });
 
     setSocket(socketInstance);
 
     return () => {
-      socketInstance.disconnect();
+      if (socketInstance) {
+        socketInstance.disconnect();
+      }
     }
   }, []);
 
@@ -55,5 +74,5 @@ export const SocketProvider = ({
     <SocketContext.Provider value={{ socket, isConnected }}>
       {children}
     </SocketContext.Provider>
-  )
-}
+  );
+};

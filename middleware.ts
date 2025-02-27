@@ -7,6 +7,8 @@ export default authMiddleware({
   // Public routes that don't require authentication
   publicRoutes: [
     "/api/uploadthing",
+    "/api/socket/io",
+    "/api/socket",
     "/sign-in",
     "/sign-up"
   ]

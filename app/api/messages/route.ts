@@ -69,15 +69,20 @@ export async function GET(
     let nextCursor = null;
 
     if (messages.length === MESSAGES_BATCH) {
-      nextCursor = messages[MESSAGES_BATCH - 1].id;
+      nextCursor = messages[messages.length - 1].id;
     }
 
+    // Ensure we always return an object with items array
     return NextResponse.json({
-      items: messages,
+      items: messages || [],
       nextCursor
     });
   } catch (error) {
     console.log("[MESSAGES_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    // Return empty items array on error
+    return NextResponse.json({
+      items: [],
+      nextCursor: null
+    });
   }
 }
